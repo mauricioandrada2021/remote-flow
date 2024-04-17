@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.net.BindException
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference
 interface RemoteSharedFlow {
     fun asBinder(): IBinder
     fun emit(jsonString: String): Job
-    fun flow(collector: (String) -> Unit)
+    fun flow(): SharedFlow<String>
 }
 
 fun remoteSharedFlow(
@@ -101,13 +102,7 @@ class RemoteSharedFlowImpl(
 
     override fun asBinder(): IBinder = localMessenger.binder
 
-    override fun flow(collector: (String) -> Unit) {
-        coroutineScope.launch {
-            readFlow.collect { response ->
-                collector(response)
-            }
-        }
-    }
+    override fun flow() = readFlow
 
     override fun handleMessage(msg: Message): Boolean {
         when(msg.obj) {

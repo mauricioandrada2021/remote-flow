@@ -26,8 +26,10 @@ import com.example.remoteflowlib.RemoteSharedFlow
 import com.example.remoteflowlib.remoteSharedFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : ComponentActivity() {
 
@@ -60,14 +62,17 @@ class MainActivity : ComponentActivity() {
         )
 
         coroutineScope.launch {
-            remoteSharedFlow.flow {
+            remoteSharedFlow.flow().collect {
                 println("$tag Response1: $it")
             }
         }
 
         coroutineScope.launch {
-            remoteSharedFlow.flow {
+            val counter = AtomicInteger(0)
+            remoteSharedFlow.flow().collect {
                 println("$tag Response2: $it")
+                if (counter.incrementAndGet() == 10)
+                    this.cancel()
             }
         }
 
@@ -75,7 +80,7 @@ class MainActivity : ComponentActivity() {
             for (i in 1..100) {
                 println("$tag sent: Hello there")
                 remoteSharedFlow.emit("$tag Hello there")
-                delay(3000)
+                delay(2000)
             }
         }
     }
