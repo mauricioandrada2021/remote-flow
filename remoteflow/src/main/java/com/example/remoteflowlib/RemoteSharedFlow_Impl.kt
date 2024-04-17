@@ -16,6 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.net.BindException
 import java.util.concurrent.atomic.AtomicReference
 
 interface RemoteSharedFlow {
@@ -69,12 +70,16 @@ class RemoteSharedFlowImpl(
                         TODO("Not yet implemented")
                     }
                 }
-                it.bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE)
+                if (!it.bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE)) {
+                    it.unbindService(serviceConnection)
+                    throw BindException()
+                }
             }
         }
     }
 
     override fun emit(jsonString:String) = coroutineScope.launch {
+
         remoteMessengers.get()?.let { messenger ->
             val message = Message().apply {
                 obj = jsonString
